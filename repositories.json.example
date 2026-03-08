@@ -18,6 +18,10 @@
   "githubOwner": "UtopikSol",
   "repositories": [
     {
+      "name": "platform-aws-core-bootstrap",
+      "permissions": "bootstrap"
+    },
+    {
       "name": "platform-aws-lza-config",
       "permissions": "bootstrap"
     },
