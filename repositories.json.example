@@ -1,0 +1,17 @@
+{
+  "githubOwner": "your-org",
+  "repositories": [
+    {
+      "name": "platform-aws-lza-config",
+      "environments": ["mgmt", "prod"]
+    },
+    {
+      "name": "platform-aws-aft-account-requests",
+      "environments": ["prod"]
+    },
+    {
+      "name": "platform-aws-aft-account-customizations",
+      "environments": ["prod"]
+    }
+  ]
+}
