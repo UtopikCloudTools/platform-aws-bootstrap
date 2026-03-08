@@ -85,7 +85,11 @@ npx cdk deploy
 
 ## Setup Instructions
 
-### 1. Update Organization Name
+### Initial Bootstrap (Manual Deployment)
+
+The first deployment must be done manually since the OIDC roles don't exist yet.
+
+#### 1. Update Organization Name
 
 Edit [repositories.json](repositories.json) and set your GitHub organization:
 
@@ -95,58 +99,94 @@ Edit [repositories.json](repositories.json) and set your GitHub organization:
 }
 ```
 
-Or use environment variable:
-```bash
-export GITHUB_ORG=your-actual-org
-```
-
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Build TypeScript
+#### 3. Build TypeScript
 
 ```bash
 npm run build
 ```
 
-### 4. Review the Stack
+#### 4. Review the Stack
 
 ```bash
 npx cdk synth
 ```
 
-### 5. Deploy to AWS
+#### 5. Deploy Bootstrap Stack (Manual)
+
+Configure AWS credentials and deploy:
 
 ```bash
+# Configure with your AWS management account credentials
+aws configure
+
+# Deploy the bootstrap stack
 npx cdk deploy
 ```
 
-The CDK will:
-1. Create the GitHub OIDC Provider
-2. Create IAM roles for each configured repository
-3. Output the role ARNs as CloudFormation exports
+The CDK will create:
+1. GitHub OIDC Provider
+2. IAM roles for each repository (including one for this bootstrap repo)
 
-### 6. Store Role ARNs in GitHub
+#### 6. Set Secret in This Repository
 
-After deployment, the role ARNs will be displayed as outputs. Store these as GitHub repository secrets:
+After bootstrap deployment completes, the role ARN for this repo is displayed. Store it as a secret:
 
-For each repository, add a secret like:
-- **Secret Name**: `AWS_ROLE_TO_ASSUME`
-- **Secret Value**: The role ARN output (e.g., `arn:aws:iam::ACCOUNT:role/github-your-org-repository-name`)
+1. Go to this repo → Settings → Secrets and variables → Actions
+2. Create secret `AWS_ROLE_TO_ASSUME` with the bootstrap role ARN
+   - Format: `arn:aws:iam::ACCOUNT:role/github-your-org-platform-aws-core-bootstrap`
 
-### 7. Update GitHub Actions Workflow
+#### 7. Update Bootstrap Role Permissions
 
-In your GitHub Actions workflow, update the credentials configuration:
+Add CDK deployment permissions to the bootstrap role in [lib/github-roles-stack.ts](lib/github-roles-stack.ts):
 
-```yaml
-- name: Configure AWS Credentials
-  uses: aws-actions/configure-aws-credentials@v4
-  with:
-    role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-    aws-region: us-east-1
+```typescript
+// Find the platform-aws-core-bootstrap role and add permissions
+if (repo.name === 'platform-aws-core-bootstrap') {
+  role.addInlinePolicy(
+    new iam.Policy(this, `BootstrapDeployPolicy`, {
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'cloudformation:*',
+            'iam:*',
+            'sts:*',
+          ],
+          resources: ['*'],
+        }),
+      ],
+    })
+  );
+}
+```
+
+Then redeploy: `npx cdk deploy`
+
+### Future Updates (GitHub Actions Automated)
+
+After initial setup, future updates are automated:
+
+1. **Add new repositories**: Update [repositories.json](repositories.json)
+2. **Push to main branch**: GitHub Actions automatically:
+   - Deploys CDK changes
+   - Creates roles for new repositories
+   - Sets `AWS_ROLE_TO_ASSUME` secrets in all repositories (new and existing)
+
+No manual steps needed! The workflow:
+- Uses this repo's OIDC role to deploy
+- Runs the secret-setting script automatically after CDK deploy
+- Sets secrets in all repos defined in `repositories.json`
+
+For manual deployments:
+```bash
+npx cdk deploy
+./set-github-secrets.sh your-org 123456789012
 ```
 
 ## Managed Repositories
@@ -190,27 +230,51 @@ This bootstrap configures OIDC roles for the following 23 repositories:
 
 ## Role Permissions
 
-The automatically created roles include:
-- Basic OIDC trust policy scoped to the specific repository
-- Permission to assume other `github-*` prefixed roles (for role chaining)
+Each repository has a dedicated IAM role created by this bootstrap. The role:
 
-### Customizing Role Permissions
+- **Only that repository can assume** (scoped via OIDC to `repo:your-org/repo-name:*`)
+- **Has no default permissions** (except assuming other `github-*` roles)
 
-To add specific permissions to a role, modify the role in [lib/github-roles-stack.ts](lib/github-roles-stack.ts) after the role is created. Example:
+### Adding Permissions to a Role
 
+You must customize each role with the specific permissions it needs. For example:
+
+**For a CDK deployment repo:**
 ```typescript
 role.addInlinePolicy(
-  new iam.Policy(this, `CustomPolicy-${repo.name}`, {
+  new iam.Policy(this, `CDKDeployPolicy-${repo.name}`, {
     statements: [
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['s3:GetObject'],
-        resources: ['arn:aws:s3:::my-bucket/*'],
+        actions: [
+          'cloudformation:*',
+          'iam:PassRole',
+          's3:GetObject',
+          's3:PutObject',
+        ],
+        resources: ['*'],
       }),
     ],
   })
 );
 ```
+
+**For a Terraform repo:**
+```typescript
+role.addInlinePolicy(
+  new iam.Policy(this, `TerraformPolicy-${repo.name}`, {
+    statements: [
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ec2:*', 'rds:*', 'vpc:*'],
+        resources: ['*'],
+      }),
+    ],
+  })
+);
+```
+
+Edit the role definitions in [lib/github-roles-stack.ts](lib/github-roles-stack.ts) to add permissions specific to each repository.
 
 ## GitHub OIDC Trust Policy
 

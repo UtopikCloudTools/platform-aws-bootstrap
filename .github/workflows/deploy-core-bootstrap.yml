@@ -1,5 +1,8 @@
 name: Deploy Core Bootstrap Stack
 
+# This workflow is for updating the bootstrap stack after initial deployment
+# For the FIRST deployment, run manually: npx cdk deploy
+# This workflow runs on subsequent updates to repositories.json or CDK code
 on:
   push:
     branches:
@@ -10,6 +13,7 @@ on:
       - 'package.json'
       - 'tsconfig.json'
       - 'cdk.json'
+      - 'repositories.json'
   workflow_dispatch:
 
 jobs:
@@ -40,7 +44,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_MGMT }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-1
 
       - name: Synth CDK
@@ -48,6 +52,15 @@ jobs:
 
       - name: Deploy CDK Stack
         run: npx cdk deploy --require-approval=never
+
+      - name: Set GitHub Secrets in All Repos
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ORG=$(jq -r '.githubOwner' repositories.json)
+          chmod +x set-github-secrets.sh
+          ./set-github-secrets.sh "$ORG" "$ACCOUNT_ID"
 
       - name: Display Stack Outputs
         run: |

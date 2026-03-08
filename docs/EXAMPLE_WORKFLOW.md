@@ -34,6 +34,7 @@ The `id-token: write` permission is **required** for OIDC to work. It allows the
 - name: Configure AWS Credentials
   uses: aws-actions/configure-aws-credentials@v4
   with:
+   mkdir -p .github/workflows
     role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
     aws-region: us-east-1
 ```
