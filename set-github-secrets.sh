@@ -20,7 +20,7 @@ if [ -z "$ACCOUNT_ID" ]; then
   echo "  • Survives user removals"
   echo ""
   echo "To authenticate with gh CLI:"
-  echo "  gh auth login"
+  echo "  gh auth login --scopes admin:org"
   echo ""
   exit 1
 fi
@@ -73,7 +73,8 @@ echo "Organization: $ORG"
 echo ""
 
 # Try to set organization secret
-if echo "$ACCOUNT_ID" | gh secret set AWS_ACCOUNT_ID --org "$ORG" 2>/dev/null; then
+if echo "$ACCOUNT_ID" | gh secret set AWS_ACCOUNT_ID --org "$ORG" 2>&1; then
+  echo ""
   echo "✓ Organization secret set successfully!"
   echo ""
   echo "=================================="
@@ -92,13 +93,54 @@ if echo "$ACCOUNT_ID" | gh secret set AWS_ACCOUNT_ID --org "$ORG" 2>/dev/null; t
   echo ""
   echo "To update in the future:"
   echo "  ./set-github-secrets.sh <new-account-id>"
+  exit 0
 else
+  echo ""
+  echo "⚠ Your GitHub token is missing the 'admin:org' scope."
+  echo "Opening browser for authentication..."
+  echo ""
+  
+  # Save current token state
+  SAVED_TOKEN="$GITHUB_TOKEN"
+  unset GITHUB_TOKEN
+  
+  # Run gh auth login with browser
+  if gh auth login --scopes admin:org; then
+    echo ""
+    echo "✓ Authentication successful!"
+    echo ""
+    echo "Retrying organization secret setup..."
+    echo ""
+    
+    # Retry setting the secret
+    if echo "$ACCOUNT_ID" | gh secret set AWS_ACCOUNT_ID --org "$ORG"; then
+      echo ""
+      echo "✓ Organization secret set successfully!"
+      echo ""
+      echo "=================================="
+      echo "Setup Complete!"
+      echo "=================================="
+      echo ""
+      echo "The AWS_ACCOUNT_ID secret is now available to:"
+      echo "  • All repositories in: $ORG"
+      echo "  • Current and future repositories"
+      echo "  • All workflows in those repositories"
+      echo ""
+      echo "Accessed in workflows as: \${{ secrets.AWS_ACCOUNT_ID }}"
+      echo ""
+      echo "To verify:"
+      echo "  gh secret list --org $ORG"
+      echo ""
+      echo "To update in the future:"
+      echo "  ./set-github-secrets.sh <new-account-id>"
+      exit 0
+    fi
+  fi
+  
+  # Restore token if login failed
+  export GITHUB_TOKEN="$SAVED_TOKEN"
+  
+  echo ""
   echo "❌ Failed to set organization secret."
-  echo ""
-  echo "This requires organization admin permissions."
-  echo "Make sure your GitHub account is an organization owner."
-  echo ""
-  echo "Alternative: Set manually via GitHub UI"
-  echo "  https://github.com/organizations/$ORG/settings/secrets/actions"
   exit 1
 fi
