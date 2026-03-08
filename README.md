@@ -117,7 +117,7 @@ Authenticate with GitHub and set the organization secret:
 gh auth login
 # Authenticate with your GitHub account (requires org owner role)
 
-./set-github-secrets.sh 271003693931
+./set-github-secrets.sh 123456789012
 # Replace with your actual AWS Account ID
 ```
 
@@ -177,7 +177,7 @@ Edit [repositories.json](repositories.json) to manage repositories and their per
 arn:aws:iam::ACCOUNT_ID:role/github-OWNER-REPO_NAME
 ```
 
-Example: `arn:aws:iam::271003693931:role/github-UtopikSol-platform-aws-core-bootstrap`
+Example: `arn:aws:iam::123456789012:role/github-UtopikSol-platform-aws-core-bootstrap`
 
 ## Project Structure
 
@@ -203,42 +203,9 @@ Example: `arn:aws:iam::271003693931:role/github-UtopikSol-platform-aws-core-boot
 
 ## Managed Repositories
 
-This bootstrap configures OIDC roles for the following 23 repositories:
+This bootstrap configures OIDC roles for repositories defined in [repositories.json](repositories.json). Update this file to add or remove repositories and manage their permission levels.
 
-### AWS Platform Services
-- `platform-aws-lza-config`
-- `platform-aws-aft-account-requests`
-- `platform-aws-aft-account-customizations`
-- `platform-aws-aft-provisioning`
-- `platform-aws-tf-modules`
-
-### AWS Infrastructure
-- `infra-aws-shared-network`
-- `infra-aws-eks-platform`
-- `infra-aws-app-erp`
-- `infra-aws-app-crm`
-
-### Azure Platform Services
-- `platform-azure-landingzone`
-- `platform-azure-policy`
-- `platform-azure-management`
-- `platform-azure-tf-modules`
-
-### Azure Infrastructure
-- `infra-azure-shared-network`
-- `infra-azure-aks-platform`
-- `infra-azure-app-erp`
-
-### Tools & Automation
-- `tools-ci-templates`
-- `tools-terraform-linters`
-- `tools-security-policies`
-- `automation-cloud-reports`
-
-### Applications
-- `app-identity-service`
-- `app-erp-api`
-- `app-erp-frontend`
+See [repositories.json.example](repositories.json.example) for detailed configuration examples.
 
 ## Role Permissions
 
@@ -317,7 +284,7 @@ It handles all bootstrap steps automatically.
 **Solution:** Set the organization secret:
 ```bash
 gh auth login
-./set-github-secrets.sh 271003693931
+./set-github-secrets.sh 123456789012
 ```
 
 ### Permissions Denied on Secret Setup
