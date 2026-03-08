@@ -1,6 +1,6 @@
-import * as cdk from 'aws-cdk-lib';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
+import { Construct } from "constructs";
 
 export interface GitHubRepoConfig {
   owner: string;
@@ -9,17 +9,17 @@ export interface GitHubRepoConfig {
   branches?: string[];
 }
 
-export interface GitHubRolesStackProps extends cdk.StackProps {
+export interface GitHubRolesStackProps {
   oidcProvider: iam.OpenIdConnectProvider;
   repositories: GitHubRepoConfig[];
   mgmtAccountRoleArn?: string;
 }
 
-export class GitHubRolesStack extends cdk.Stack {
+export class GitHubRolesStack extends Construct {
   public readonly roleArns: Record<string, string> = {};
 
   constructor(scope: Construct, id: string, props: GitHubRolesStackProps) {
-    super(scope, id, props);
+    super(scope, id);
 
     const { oidcProvider, repositories } = props;
 
@@ -30,14 +30,15 @@ export class GitHubRolesStack extends cdk.Stack {
       // Build the conditions for the role trust policy
       const conditions: Record<string, any> = {
         StringEquals: {
-          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
         },
       };
 
       // Scope by repository
       const repoCondition = `repo:${repo.owner}/${repo.name}:*`;
-      conditions['StringLike'] = conditions['StringLike'] || {};
-      conditions['StringLike']['token.actions.githubusercontent.com:sub'] = repoCondition;
+      conditions["StringLike"] = conditions["StringLike"] || {};
+      conditions["StringLike"]["token.actions.githubusercontent.com:sub"] =
+        repoCondition;
 
       // Create the role
       const role = new iam.Role(this, `GitHubRole-${repo.name}`, {
@@ -48,16 +49,12 @@ export class GitHubRolesStack extends cdk.Stack {
 
       // Add inline policy for basic assume role permissions
       // This allows the workflow to assume other roles if needed
-      role.addInlinePolicy(
-        new iam.Policy(this, `AssumeRolePolicy-${repo.name}`, {
-          statements: [
-            new iam.PolicyStatement({
-              effect: iam.Effect.ALLOW,
-              actions: ['sts:AssumeRole'],
-              resources: ['arn:aws:iam::*:role/github-*'],
-            }),
-          ],
-        })
+      role.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["sts:AssumeRole"],
+          resources: ["arn:aws:iam::*:role/github-*"],
+        }),
       );
 
       // Store the role ARN

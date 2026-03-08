@@ -1,8 +1,8 @@
-import * as cdk from 'aws-cdk-lib';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
-import { GitHubOIDCStack } from './github-oidc-stack';
-import { GitHubRolesStack, GitHubRepoConfig } from './github-roles-stack';
+import * as cdk from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
+import { Construct } from "constructs";
+import { GitHubOIDCStack } from "./github-oidc-stack";
+import { GitHubRolesStack, GitHubRepoConfig } from "./github-roles-stack";
 
 export interface CoreBootstrapStackProps extends cdk.StackProps {
   owner: string;
@@ -15,19 +15,13 @@ export class CoreBootstrapStack extends cdk.Stack {
 
     const { owner, repositories } = props;
 
-    // Create the OIDC provider stack
-    const oidcStack = new GitHubOIDCStack(this, 'GitHubOIDC', {
-      env: this.env,
-    });
+    // Create the OIDC provider construct
+    const oidcStack = new GitHubOIDCStack(this, "GitHubOIDC");
 
-    // Create the roles stack
-    const rolesStack = new GitHubRolesStack(this, 'GitHubRoles', {
+    // Create the roles construct
+    const rolesStack = new GitHubRolesStack(this, "GitHubRoles", {
       oidcProvider: oidcStack.oidcProvider,
       repositories,
-      env: this.env,
     });
-
-    // Add dependency
-    rolesStack.addDependency(oidcStack);
   }
 }
