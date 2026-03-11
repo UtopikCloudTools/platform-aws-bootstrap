@@ -101,6 +101,17 @@ echo ""
 echo "========================================"
 echo "Configuring S3 Bucket Permissions"
 echo "========================================"
+
+# Check if jq is available (required for JSON merging)
+if ! command -v jq &> /dev/null; then
+    echo "❌ jq is not installed. Installing jq..."
+    apt-get update && apt-get install -y jq > /dev/null 2>&1 || {
+        echo "❌ Failed to install jq. Please install it manually."
+        exit 1
+    }
+    echo "✓ jq installed"
+fi
+
 ASSETS_BUCKET="cdk-hnb659fds-assets-$ACCOUNT_ID-$REGION"
 
 # Create a temporary policy file
@@ -110,8 +121,8 @@ POLICY_FILE=$(mktemp)
 EXISTING_POLICY=$(aws s3api get-bucket-policy --bucket "$ASSETS_BUCKET" --region "$REGION" 2>/dev/null)
 
 if [ $? -eq 0 ]; then
-    # Policy exists, we'll add to it
-    echo "$EXISTING_POLICY" > "$POLICY_FILE"
+    # Policy exists, parse it (note: get-bucket-policy returns policy as JSON string in .Policy field)
+    echo "$EXISTING_POLICY" | jq -r '.Policy' 2>/dev/null > "$POLICY_FILE" || echo "$EXISTING_POLICY" > "$POLICY_FILE"
 else
     # No policy exists, create a new one
     cat > "$POLICY_FILE" << 'EOF'
@@ -122,89 +133,101 @@ else
 EOF
 fi
 
-# Add S3 access statement for GitHub roles (will be created after deployment)
-# This statement uses a wildcard for all github-* roles in the account
-cat >> "$POLICY_FILE.new" << EOF
+# Add S3 access statement for GitHub roles using jq to properly merge JSON
+# Note: S3 bucket policies don't support wildcards in Principal ARNs
+# Use account root principal instead - access is controlled by IAM role permissions
+READ_STATEMENT=$(cat << EOF
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowGitHubRoleCDKAssetAccess",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::$ACCOUNT_ID:role/github-*"
-      },
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket",
-        "s3:GetObjectVersion"
-      ],
-      "Resource": [
-        "arn:aws:s3:::$ASSETS_BUCKET",
-        "arn:aws:s3:::$ASSETS_BUCKET/*"
-      ]
-    }
+  "Sid": "AllowCDKAssetAccess",
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::$ACCOUNT_ID:root"
+  },
+  "Action": [
+    "s3:GetObject",
+    "s3:PutObject",
+    "s3:DeleteObject",
+    "s3:ListBucket",
+    "s3:GetObjectVersion",
+    "s3:GetBucketVersioning",
+    "s3:PutBucketVersioning",
+    "s3:GetBucketPolicy",
+    "s3:GetBucketAcl",
+    "s3:GetBucketLocation"
+  ],
+  "Resource": [
+    "arn:aws:s3:::$ASSETS_BUCKET",
+    "arn:aws:s3:::$ASSETS_BUCKET/*"
   ]
 }
 EOF
+)
+
+# Merge the statement into the policy using jq
+# Remove any existing statement with the same Sid first, then add the new one
+jq --argjson newStmt "$READ_STATEMENT" \
+   '.Statement |= map(select(.Sid != "AllowCDKAssetAccess")) + [$newStmt]' \
+   "$POLICY_FILE" > "$POLICY_FILE.new" 2>/dev/null
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to merge bucket policy"
+    echo "Policy file contents:"
+    cat "$POLICY_FILE"
+    rm -f "$POLICY_FILE" "$POLICY_FILE.new"
+    exit 1
+fi
+
+# Debug: show the policy being applied
+echo "Applying bucket policy..."
+echo "Bucket: $ASSETS_BUCKET"
+echo "Account ID: $ACCOUNT_ID"
+echo "Region: $REGION"
+echo ""
 
 # Apply the new policy
-aws s3api put-bucket-policy --bucket "$ASSETS_BUCKET" --policy file://"$POLICY_FILE.new" --region "$REGION"
-if [ $? -eq 0 ]; then
-    echo "✓ S3 bucket policy updated for GitHub roles"
+aws s3api put-bucket-policy --bucket "$ASSETS_BUCKET" --policy file://"$POLICY_FILE.new" --region "$REGION" 2>&1
+POLICY_RESULT=$?
+
+if [ $POLICY_RESULT -eq 0 ]; then
+    echo "✓ S3 bucket policy updated successfully"
+    echo ""
+    # Verify the policy was applied
+    echo "Verifying bucket policy..."
+    aws s3api get-bucket-policy --bucket "$ASSETS_BUCKET" --region "$REGION" 2>/dev/null | jq -r '.Policy' | jq . 2>/dev/null | head -30
+    echo ""
 else
-    echo "⚠️  Failed to update bucket policy (may already be set)"
+    echo "⚠️  Failed to update bucket policy"
+    echo "Error output above. Continuing anyway..."
+    echo ""
+    echo "Note: Current AWS credentials may not have s3:PutBucketPolicy permission."
+    echo "Current caller:"
+    aws sts get-caller-identity
+    echo ""
 fi
 
 # Cleanup temp files
 rm -f "$POLICY_FILE" "$POLICY_FILE.new"
-echo ""
 
-echo "========================================"
-echo "Installing Project Dependencies"
-echo "========================================"
-npm install
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install dependencies"
-    exit 1
-fi
-echo "✓ Dependencies installed"
-echo ""
-
-echo "========================================"
-echo "Building TypeScript"
-echo "========================================"
-npm run build
-if [ $? -ne 0 ]; then
-    echo "❌ Build failed"
-    exit 1
-fi
-echo "✓ Build complete"
-echo ""
-
-echo "========================================"
-echo "Deploying CDK Stack"
-echo "========================================"
-export CDK_DEFAULT_ACCOUNT=$ACCOUNT_ID
-export CDK_DEFAULT_REGION=$REGION
-npx cdk deploy --require-approval=never
-DEPLOY_EXIT_CODE=$?
-
-if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo "❌ Deployment failed. Please review the errors above."
-    exit 1
+# Verify bucket is accessible
+echo "Verifying S3 bucket access..."
+if aws s3 ls "s3://$ASSETS_BUCKET" --region "$REGION" &> /dev/null; then
+    echo "✓ S3 bucket is accessible"
+else
+    echo "⚠️  Cannot access S3 bucket with current credentials"
+    echo "  This may cause issues with 'cdk deploy'"
+    echo "  Ensure your IAM user/role has S3 permissions in its IAM policy"
 fi
 
+echo "========================================"
+echo "✓ Bootstrap Complete!"
+echo "========================================"
 echo ""
-echo "========================================"
-echo "✓ Deployment Complete!"
-echo "========================================"
+echo "CDKToolkit has been deployed."
 echo ""
 echo "Next steps:"
-echo "  1. Make changes to repositories.json as needed"
-echo "  2. Push to main branch"
-echo "  3. GitHub Actions will automatically deploy future changes"
+echo "  1. Commit and push this code to your repository"
+echo "  2. GitHub Actions will automatically:"
+echo "     • Install dependencies"
+echo "     • Build the project"
+echo "     • Deploy the CDK stack"
 echo ""

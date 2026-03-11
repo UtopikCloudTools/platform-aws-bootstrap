@@ -22,3 +22,4 @@ node_modules/
 
 # Environment-specific config (optional - uncomment to ignore)
 # repositories.*.json
+cdk-deploy.log
