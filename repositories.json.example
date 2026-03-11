@@ -22,10 +22,6 @@
       "permissions": "bootstrap"
     },
     {
-      "name": "platform-aws-lza-config",
-      "permissions": "bootstrap"
-    },
-    {
       "name": "platform-aws-aft-account-requests",
       "permissions": "deploy"
     },
