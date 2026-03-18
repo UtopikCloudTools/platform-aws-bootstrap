@@ -2,8 +2,11 @@
   "githubOwner": "UtopikSol",
   "repositories": [
     {
+      "owner": "UtopikSol",
       "name": "platform-aws-core-bootstrap",
-      "permissions": "bootstrap"
+      "permissions": "bootstrap",
+      "environments": ["main"],
+      "branches": ["main"]
     }
   ]
 }

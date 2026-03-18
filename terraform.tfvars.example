@@ -1,0 +1,36 @@
+# Terraform Variables Example
+# Copy to terraform.tfvars and customize with your values
+
+aws_region = "us-east-1"
+environment = "prod"
+
+repositories = [
+  {
+    owner       = "UtopikSol"
+    name        = "platform-aws-core-bootstrap"
+    permissions = "bootstrap"
+    environments = [
+      "main"
+    ]
+    branches = [
+      "main"
+    ]
+  },
+  # Add more repositories as needed:
+  # {
+  #   owner       = "UtopikSol"
+  #   name        = "my-app-repo"
+  #   permissions = "deploy"
+  #   environments = ["dev", "prod"]
+  # },
+  # {
+  #   owner       = "UtopikSol"
+  #   name        = "my-monitoring-repo"
+  #   permissions = "read-only"
+  # },
+]
+
+tags = {
+  Team       = "Platform"
+  CostCenter = "Engineering"
+}

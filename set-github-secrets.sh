@@ -1,5 +1,6 @@
 #!/bin/bash
 # set-github-secrets.sh - Set AWS_ACCOUNT_ID as organization secret
+# This allows all repositories to use OIDC for AWS access without per-repo secrets
 
 set -e
 
@@ -11,13 +12,13 @@ if [ -z "$ACCOUNT_ID" ]; then
   echo "Example: ./set-github-secrets.sh 123456789012"
   echo ""
   echo "This script sets AWS_ACCOUNT_ID as an ORGANIZATION SECRET."
-  echo "The organization is read from repositories.json"
+  echo "Read from repositories.json if not provided."
   echo ""
-  echo "Benefits:"
-  echo "  • Single source of truth"
-  echo "  • Available to all current and future repos"
-  echo "  • No per-repository setup needed"
-  echo "  • Survives user removals"
+  echo "Benefits of organization secrets:"
+  echo "  ✓ Single source of truth"
+  echo "  ✓ Available to all current and future repos"
+  echo "  ✓ No per-repository setup needed"
+  echo "  ✓ Centralized management"
   echo ""
   echo "To authenticate with gh CLI:"
   echo "  gh auth login --scopes admin:org"
@@ -48,6 +49,37 @@ fi
 
 USERNAME=$(gh api user -q .login)
 echo "✓ Authenticated as: $USERNAME"
+
+# Extract organization from repositories.json
+GITHUB_ORG=$(grep -oP '"githubOwner":\s*"\K[^"]+' repositories.json 2>/dev/null || echo "")
+
+if [ -z "$GITHUB_ORG" ]; then
+    echo "❌ Could not find 'githubOwner' in repositories.json"
+    exit 1
+fi
+
+echo "✓ Found organization: $GITHUB_ORG"
+echo ""
+
+# Set the secret
+echo "Setting AWS_ACCOUNT_ID=$ACCOUNT_ID for organization: $GITHUB_ORG"
+
+# Check if secret already exists
+if gh secret list -o "$GITHUB_ORG" 2>/dev/null | grep -q "AWS_ACCOUNT_ID"; then
+  echo "⚠️  Secret AWS_ACCOUNT_ID already exists. Updating..."
+  # Note: gh secret set doesn't have an update flag, so we delete and recreate
+  gh secret delete AWS_ACCOUNT_ID -o "$GITHUB_ORG" --confirm
+fi
+
+echo "$ACCOUNT_ID" | gh secret set AWS_ACCOUNT_ID -o "$GITHUB_ORG"
+
+echo ""
+echo "✓ Successfully set organization secret!"
+echo ""
+echo "To use in GitHub Actions workflows:"
+echo '  role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-YourOrg-YourRepo'
+echo ""
+echo "Documentation: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect"
 echo ""
 
 # Validate AWS Account ID format
