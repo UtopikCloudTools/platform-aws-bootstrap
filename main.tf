@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
     tls = {
       source  = "hashicorp/tls"
       version = "~> 4.0"
@@ -32,9 +36,12 @@ provider "aws" {
     tags = {
       Project     = "GitHub-Bootstrap"
       ManagedBy   = "Terraform"
-      Environment = var.environment
     }
   }
+}
+
+provider "github" {
+  token = var.github_token != "" ? var.github_token : null
 }
 
 provider "tls" {}

@@ -1,8 +1,9 @@
 # Terraform Variables Example
 # Copy to terraform.tfvars and customize with your values
 
-aws_region = "ca-central-1"
-environment = "prod"
+aws_region          = "ca-central-1"
+# github_token is optional - leave empty to use GITHUB_TOKEN environment variable
+# github_token        = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 repositories = [
   {

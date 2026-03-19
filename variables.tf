@@ -32,12 +32,12 @@ variable "oidc_client_ids" {
 variable "repositories" {
   description = "GitHub repositories to configure for OIDC. Use `environments` to scope trust policies to specific GitHub Environments."
   type = list(object({
-    owner        = string
-    name         = string
-    permissions  = optional(string, "deploy")
+    owner       = string
+    name        = string
+    permissions = optional(string, "deploy")
     environments = optional(list(object({
-      name      = string
-      secrets   = optional(list(object({
+      name = string
+      secrets = optional(list(object({
         name  = string
         value = string
       })), [])
@@ -55,6 +55,18 @@ variable "repositories" {
     ])
     error_message = "All permissions must be one of: bootstrap, full, deploy, read-only"
   }
+}
+
+variable "github_token" {
+  description = "GitHub API token. If not provided, uses GITHUB_TOKEN environment variable. Requires admin:org scope."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "github_org" {
+  description = "GitHub organization name"
+  type        = string
 }
 
 variable "tags" {

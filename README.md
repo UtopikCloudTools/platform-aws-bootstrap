@@ -447,32 +447,47 @@ Edit [repositories.json](repositories.json) with your repositories and desired p
 - `deploy` - Application deployment (CloudFormation, S3, no IAM creation)
 - `read-only` - Monitor and report (CloudWatch, Logs, no modifications)
 
-#### 3. Run Bootstrap Script
+#### 3. GitHub Token Configuration
 
+The GitHub token can be provided in multiple ways, depending on your environment:
+
+**Option 1: Environment Variable (Recommended for CI/CD)**
 ```bash
-./bootstrap.sh
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+terraform apply
 ```
 
-This script will:
-- ✓ Verify AWS credentials
-- ✓ Bootstrap the AWS environment (CDK Toolkit)
-- ✓ Install dependencies
-- ✓ Deploy the bootstrap stack
-- ✓ Create GitHub OIDC provider and IAM roles
-
-#### 4. Set Organization Secret
-
-Authenticate with GitHub and set the organization secret:
-
-```bash
-gh auth login
-# Authenticate with your GitHub account (requires org owner role)
-
-./set-github-secrets.sh 123456789012
-# Replace with your actual AWS Account ID
+**Option 2: Terraform Variable (For Codespaces)**
+```hcl
+# In terraform.tfvars
+github_token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-This sets `AWS_ACCOUNT_ID` as an organization secret, available to all repositories.
+**Option 3: GitHub Actions (Automatic)**
+GitHub Actions automatically provides `GITHUB_TOKEN` - no configuration needed:
+
+```yaml
+- name: Terraform Apply
+  run: terraform apply -auto-approve
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Note:** The token requires `admin:org` scope to manage organization-level resources.
+
+#### 4. Deploy Terraform
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+This will:
+- ✓ Create GitHub OIDC provider in AWS
+- ✓ Create repository-specific IAM roles
+- ✓ Set up environment secrets and variables
+- ✓ Configure GitHub Actions integration
 
 ### Automated Updates (GitHub Actions)
 
@@ -542,21 +557,63 @@ Example: `arn:aws:iam::123456789012:role/github-UtopikSol-platform-aws-bootstrap
 ├── .devcontainer/
 │   └── devcontainer.json         # Dev container configuration
 ├── .github/workflows/
-│   ├── deploy-bootstrap.yml # Automated deployment workflow
-│   └── pr-validation.yml         # PR validation checks
+│   └── deploy-bootstrap.yml      # Automated deployment workflow
 ├── .gitattributes
-├── bootstrap.sh                  # One-step bootstrap script
-├── set-github-secrets.sh         # Sets organization secrets
-├── package.json                  # Dependencies
-├── tsconfig.json                 # TypeScript configuration
-└── cdk.json                      # CDK configuration
+├── main.tf                       # Main Terraform configuration
+├── variables.tf                  # Terraform variables
+├── outputs.tf                    # Terraform outputs
+├── github-secrets.tf             # GitHub secrets management
+├── terraform.tfvars.example      # Example Terraform variables
+└── README.md                     # This file
 ```
+
+## Managing Secrets and Variables
+
+GitHub secrets and environment variables are managed entirely through Terraform:
+
+### Organization Secrets
+Organization-level secrets (e.g., `AWS_ACCOUNT_ID`) are available to all repositories:
+
+```hcl
+# Set in terraform.tfvars
+aws_account_id = "111111111111"
+```
+
+### Environment Secrets and Variables
+Specify secrets and variables per repository/environment in `terraform.tfvars`:
+
+```hcl
+repositories = [
+  {
+    owner       = "YourOrg"
+    name        = "your-repo"
+    permissions = "deploy"
+    environments = [
+      {
+        name = "prod"
+        secrets = [
+          {
+            name  = "AWS_ACCOUNT_ID"
+            value = "111111111111"
+          }
+        ]
+        variables = [
+          {
+            name  = "AWS_REGION"
+            value = "us-east-1"
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+Terraform will automatically create and manage these secrets across your repositories.
 
 ## Managed Repositories
 
-This bootstrap configures OIDC roles for repositories defined in [repositories.json](repositories.json). Update this file to add or remove repositories and manage their permission levels.
-
-See [repositories.json.example](repositories.json.example) for detailed configuration examples.
+Configure repositories and their permissions in `terraform.tfvars`. Terraform manages all OIDC roles and GitHub secrets automatically.
 
 ## Role Permissions
 
