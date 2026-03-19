@@ -10,10 +10,7 @@ repositories = [
     name        = "platform-aws-bootstrap"
     permissions = "bootstrap"
     environments = [
-      "main"
-    ]
-    branches = [
-      "main"
+      "prod"
     ]
   },
   # Add more repositories as needed:

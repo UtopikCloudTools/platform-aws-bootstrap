@@ -157,15 +157,13 @@ Example structure:
       "owner": "UtopikSol",
       "name": "my-infrastructure-repo",
       "permissions": "bootstrap",
-      "environments": ["main"],
-      "branches": ["main"]
+      "environments": ["prod"]
     },
     {
       "owner": "UtopikSol",
       "name": "my-app-repo",
       "permissions": "deploy",
-      "environments": ["dev", "staging", "prod"],
-      "branches": ["main", "develop"]
+      "environments": ["dev", "staging", "prod"]
     }
   ]
 }
@@ -183,7 +181,6 @@ repositories = [
     name        = "repo-name"
     permissions = "deploy"
     environments = ["prod"]
-    branches     = ["main"]
   },
 ]
 

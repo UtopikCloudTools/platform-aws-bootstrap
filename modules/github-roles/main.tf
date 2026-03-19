@@ -21,9 +21,9 @@ resource "aws_iam_role" "github" {
   tags = merge(
     var.tags,
     {
-      Name           = "github-${each.value.owner}-${each.value.name}"
-      GitHubOwner    = each.value.owner
-      GitHubRepo     = each.value.name
+      Name              = "github-${each.value.owner}-${each.value.name}"
+      GitHubOwner       = each.value.owner
+      GitHubRepo        = each.value.name
       GitHubPermissions = each.value.permissions
     }
   )
@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "github_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${each.value.owner}/${each.value.name}:*"]
+      values   = local.assume_role_subjects[each.key]
     }
   }
 }
@@ -97,6 +97,18 @@ data "aws_iam_policy_document" "github_permissions" {
 
 # Local permissions mapping
 locals {
+  assume_role_subjects = {
+    for repo in var.repositories : repo.name => (
+      length(repo.environments) > 0 ? [
+        for env in repo.environments : "repo:${repo.owner}/${repo.name}:environment:${env}"
+      ] :
+      length(repo.branches) > 0 ? [
+        for branch in repo.branches : "repo:${repo.owner}/${repo.name}:ref:refs/heads/${branch}"
+      ] :
+      ["repo:${repo.owner}/${repo.name}:*"]
+    )
+  }
+
   permission_statements = {
     "bootstrap" = [
       {
@@ -341,7 +353,7 @@ locals {
         effect = "Allow"
         actions = [
           "rds:DescribeDBInstances",
-          "rds:DesceneDBClusters",
+          "rds:DescribeDBClusters",
           "rds:ModifyDBInstance",
           "rds:ModifyDBCluster",
         ]

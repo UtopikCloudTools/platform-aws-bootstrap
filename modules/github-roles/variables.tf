@@ -6,13 +6,12 @@ variable "oidc_provider_arn" {
 }
 
 variable "repositories" {
-  description = "List of GitHub repositories to create roles for"
+  description = "List of GitHub repositories to create roles for. Prefer `environments` for OIDC trust scoping; `branches` is a legacy fallback."
   type = list(object({
     owner        = string
     name         = string
     permissions  = optional(string, "deploy")
     environments = optional(list(string), [])
-    branches     = optional(list(string), [])
   }))
 }
 
