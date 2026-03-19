@@ -30,13 +30,22 @@ variable "oidc_client_ids" {
 }
 
 variable "repositories" {
-  description = "GitHub repositories to configure for OIDC. Prefer `environments` for trust-policy scoping; `branches` is a legacy fallback."
+  description = "GitHub repositories to configure for OIDC. Use `environments` to scope trust policies to specific GitHub Environments."
   type = list(object({
     owner        = string
     name         = string
     permissions  = optional(string, "deploy")
-    environments = optional(list(string), [])
-    branches     = optional(list(string), [])
+    environments = optional(list(object({
+      name      = string
+      secrets   = optional(list(object({
+        name  = string
+        value = string
+      })), [])
+      variables = optional(list(object({
+        name  = string
+        value = string
+      })), [])
+    })), [])
   }))
 
   validation {

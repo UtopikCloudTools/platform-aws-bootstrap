@@ -10,7 +10,15 @@ repositories = [
     name        = "platform-aws-bootstrap"
     permissions = "bootstrap"
     environments = [
-      "prod"
+      {
+      name = "prod"
+      secrets = [
+        {
+          name  = "AWS_ACCOUNT_ID"
+          value = "111111111111"
+        }
+      ]
+      }
     ]
   },
   # Add more repositories as needed:

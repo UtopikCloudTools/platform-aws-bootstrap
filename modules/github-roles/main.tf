@@ -102,9 +102,6 @@ locals {
       length(repo.environments) > 0 ? [
         for env in repo.environments : "repo:${repo.owner}/${repo.name}:environment:${env}"
       ] :
-      length(repo.branches) > 0 ? [
-        for branch in repo.branches : "repo:${repo.owner}/${repo.name}:ref:refs/heads/${branch}"
-      ] :
       ["repo:${repo.owner}/${repo.name}:*"]
     )
   }
