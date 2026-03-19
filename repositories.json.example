@@ -3,7 +3,7 @@
  * 
  * PERMISSIONS LEVELS:
  * - "bootstrap" : Infrastructure/bootstrap management (create roles, OIDC, etc.)
- *                 Use for: platform-aws-core-bootstrap, bootstrap infrastructure repos
+ *                 Use for: platform-aws-bootstrap, bootstrap infrastructure repos
  * - "full"      : All AWS/Azure permissions (IAM, CloudFormation, S3, etc.)
  *                 Use for: comprehensive infrastructure management repos
  * - "deploy"    : CloudFormation, S3, Lambda, RDS, etc. (no IAM creation)
@@ -18,7 +18,7 @@
   "githubOwner": "UtopikSol",
   "repositories": [
     {
-      "name": "platform-aws-core-bootstrap",
+      "name": "platform-aws-bootstrap",
       "permissions": "bootstrap"
     },
     {

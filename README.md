@@ -1,4 +1,4 @@
-# platform-aws-core-bootstrap
+# platform-aws-bootstrap
 
 Terraform infrastructure for setting up GitHub OpenID Connect (OIDC) integration and IAM roles for secure, credential-free deployments from GitHub Actions.
 
@@ -60,8 +60,8 @@ GitHub Actions Workflow
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/UtopikSol/platform-aws-core-bootstrap.git
-   cd platform-aws-core-bootstrap
+   git clone https://github.com/UtopikSol/platform-aws-bootstrap.git
+   cd platform-aws-bootstrap
    ```
 
 2. **Create terraform variables file:**
@@ -93,7 +93,7 @@ Infrastructure/bootstrap management (for infrastructure as code repositories)
 - CloudFormation stack operations
 - S3 artifact bucket access
 - IAM role creation and management
-- Use for: `platform-aws-core-bootstrap`, infrastructure automation repos
+- Use for: `platform-aws-bootstrap`, infrastructure automation repos
 
 ### `full`
 All AWS permissions (comprehensive infrastructure management)
@@ -400,7 +400,7 @@ See LICENSE file for details
 ## Support
 
 For issues and questions:
-- GitHub Issues: [Platform AWS Bootstrap Issues](https://github.com/UtopikSol/platform-aws-core-bootstrap/issues)
+- GitHub Issues: [Platform AWS Bootstrap Issues](https://github.com/UtopikSol/platform-aws-bootstrap/issues)
 - Documentation: [EXAMPLE_WORKFLOW.md](./docs/EXAMPLE_WORKFLOW.md)
 - Personal GitHub account with organization owner role (for setting secrets)
 
@@ -433,7 +433,7 @@ Edit [repositories.json](repositories.json) with your repositories and desired p
   "githubOwner": "UtopikSol",
   "repositories": [
     {
-      "name": "platform-aws-core-bootstrap",
+      "name": "platform-aws-bootstrap",
       "permissions": "bootstrap"
     },
     {
@@ -531,7 +531,7 @@ Edit [repositories.json](repositories.json) to manage repositories and their per
 arn:aws:iam::ACCOUNT_ID:role/github-OWNER-REPO_NAME
 ```
 
-Example: `arn:aws:iam::123456789012:role/github-UtopikSol-platform-aws-core-bootstrap`
+Example: `arn:aws:iam::123456789012:role/github-UtopikSol-platform-aws-bootstrap`
 
 ## Project Structure
 
@@ -541,11 +541,11 @@ Example: `arn:aws:iam::123456789012:role/github-UtopikSol-platform-aws-core-boot
 ├── lib/
 │   ├── github-oidc-stack.ts      # OIDC provider configuration
 │   ├── github-roles-stack.ts     # Repository-specific role definitions
-│   └── core-bootstrap-stack.ts   # Stack composition and orchestration
+│   └── bootstrap-stack.ts   # Stack composition and orchestration
 ├── .devcontainer/
 │   └── devcontainer.json         # Dev container configuration
 ├── .github/workflows/
-│   ├── deploy-core-bootstrap.yml # Automated deployment workflow
+│   ├── deploy-bootstrap.yml # Automated deployment workflow
 │   └── pr-validation.yml         # PR validation checks
 ├── .gitattributes
 ├── bootstrap.sh                  # One-step bootstrap script

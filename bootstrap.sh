@@ -92,7 +92,7 @@ echo "Next steps:"
 echo "  1. Review the plan:       terraform plan"
 echo "  2. Apply configuration:   terraform apply"
 echo ""
-echo "Documentation: https://github.com/UtopikSol/platform-aws-core-bootstrap/blob/main/README.md"
+echo "Documentation: https://github.com/UtopikSol/platform-aws-bootstrap/blob/main/README.md"
 if ! command -v cdk &> /dev/null; then
     echo "📦 Installing AWS CDK CLI globally..."
     npm install -g aws-cdk

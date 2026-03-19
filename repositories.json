@@ -3,7 +3,7 @@
   "repositories": [
     {
       "owner": "UtopikSol",
-      "name": "platform-aws-core-bootstrap",
+      "name": "platform-aws-bootstrap",
       "permissions": "bootstrap",
       "environments": ["main"],
       "branches": ["main"]

@@ -1,13 +1,13 @@
 # Terraform Variables Example
 # Copy to terraform.tfvars and customize with your values
 
-aws_region = "us-east-1"
+aws_region = "ca-central-1"
 environment = "prod"
 
 repositories = [
   {
     owner       = "UtopikSol"
-    name        = "platform-aws-core-bootstrap"
+    name        = "platform-aws-bootstrap"
     permissions = "bootstrap"
     environments = [
       "main"
