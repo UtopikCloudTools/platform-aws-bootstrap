@@ -1,7 +1,6 @@
-# GitHub Secrets Management
-# Sets up environment-level secrets for repositories
+# GitHub Secrets and Variables Management
+# Sets up environment-level secrets and variables for repositories
 
-# Environment secrets for each repository
 resource "github_actions_environment_secret" "repo_secrets" {
   for_each = {
     for item in flatten([
@@ -26,7 +25,6 @@ resource "github_actions_environment_secret" "repo_secrets" {
   plaintext_value = each.value.value
 }
 
-# Environment variables for each repository
 resource "github_actions_environment_variable" "repo_variables" {
   for_each = {
     for item in flatten([

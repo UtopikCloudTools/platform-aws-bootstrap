@@ -34,8 +34,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "GitHub-Bootstrap"
-      ManagedBy   = "Terraform"
+      Project   = "GitHub-Bootstrap"
+      ManagedBy = "Terraform"
     }
   }
 }
@@ -62,6 +62,13 @@ module "github_roles" {
   oidc_provider_arn = module.github_oidc.oidc_provider_arn
   repositories      = var.repositories
   tags              = var.tags
+}
+
+# GitHub Secrets and Variables Module
+module "github_secrets" {
+  source = "./modules/github-secrets"
+
+  repositories = var.repositories
 }
 
 # CloudFormation export for other stacks

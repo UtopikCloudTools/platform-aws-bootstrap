@@ -7,7 +7,7 @@ aws_region          = "ca-central-1"
 
 repositories = [
   {
-    owner       = "UtopikSol"
+    owner       = "YourOrganization"
     name        = "platform-aws-bootstrap"
     permissions = "bootstrap"
     environments = [
@@ -24,13 +24,13 @@ repositories = [
   },
   # Add more repositories as needed:
   # {
-  #   owner       = "UtopikSol"
+  #   owner       = "YourOrganization"
   #   name        = "my-app-repo"
   #   permissions = "deploy"
   #   environments = ["dev", "prod"]
   # },
   # {
-  #   owner       = "UtopikSol"
+  #   owner       = "YourOrganization"
   #   name        = "my-monitoring-repo"
   #   permissions = "read-only"
   # },
