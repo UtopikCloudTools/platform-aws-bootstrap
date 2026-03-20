@@ -43,7 +43,7 @@ if ! [[ "$ACCOUNT_ID" =~ ^[0-9]{12}$ ]]; then
 fi
 
 # Define bucket name
-RANDOM_SUFFIX=$(openssl rand -hex 5)
+RANDOM_SUFFIX=$(aws sso-admin list-instances --query "Instances[0].IdentityStoreId" --output text 2>/dev/null | tr -d '-')
 BUCKET_NAME="${BUCKET_PREFIX}-terraform-state-${RANDOM_SUFFIX}-${REGION}"
 
 echo "Creating Terraform backend resources..."
