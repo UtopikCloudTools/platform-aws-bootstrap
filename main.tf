@@ -19,14 +19,7 @@ terraform {
     }
   }
 
-  # Uncomment and configure for remote state storage
-  # backend "s3" {
-  #   bucket         = "my-terraform-state"
-  #   key            = "github-bootstrap/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  #   dynamodb_table = "terraform-locks"
-  # }
+  backend "s3" {}
 }
 
 provider "aws" {
