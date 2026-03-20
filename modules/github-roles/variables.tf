@@ -8,11 +8,17 @@ variable "oidc_provider_arn" {
 variable "repositories" {
   description = "List of GitHub repositories to create roles for. Use `environments` to scope trust policies to specific GitHub Environments."
   type = list(object({
-    owner        = string
-    name         = string
-    permissions  = optional(string, "deploy")
-    environments = optional(list(string), [])
+    name        = string
+    permissions = optional(string, "deploy")
+    environments = optional(list(object({
+      name = string
+    })), [])
   }))
+}
+
+variable "github_org" {
+  description = "GitHub organization name"
+  type        = string
 }
 
 variable "tags" {

@@ -14,15 +14,15 @@ terraform {
 resource "aws_iam_role" "github" {
   for_each = { for repo in var.repositories : repo.name => repo }
 
-  name               = "github-${each.value.owner}-${each.value.name}"
+  name               = "github-${var.github_org}-${each.value.name}"
   assume_role_policy = data.aws_iam_policy_document.github_assume_role[each.key].json
-  description        = "OIDC role for GitHub repository ${each.value.owner}/${each.value.name}"
+  description        = "OIDC role for GitHub repository ${var.github_org}/${each.value.name}"
 
   tags = merge(
     var.tags,
     {
-      Name              = "github-${each.value.owner}-${each.value.name}"
-      GitHubOwner       = each.value.owner
+      Name              = "github-${var.github_org}-${each.value.name}"
+      GitHubOwner       = var.github_org
       GitHubRepo        = each.value.name
       GitHubPermissions = each.value.permissions
     }
@@ -100,9 +100,9 @@ locals {
   assume_role_subjects = {
     for repo in var.repositories : repo.name => (
       length(repo.environments) > 0 ? [
-        for env in repo.environments : "repo:${repo.owner}/${repo.name}:environment:${env}"
+        for env in repo.environments : "repo:${var.github_org}/${repo.name}:environment:${env}"
       ] :
-      ["repo:${repo.owner}/${repo.name}:*"]
+      ["repo:${var.github_org}/${repo.name}:*"]
     )
   }
 

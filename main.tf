@@ -35,6 +35,7 @@ provider "aws" {
 
 provider "github" {
   token = var.github_token != "" ? var.github_token : null
+  owner = var.github_org
 }
 
 provider "tls" {}
@@ -53,6 +54,7 @@ module "github_roles" {
   source = "./modules/github-roles"
 
   oidc_provider_arn = module.github_oidc.oidc_provider_arn
+  github_org        = var.github_org
   repositories      = var.repositories
   tags              = var.tags
 }
@@ -61,6 +63,7 @@ module "github_roles" {
 module "github_secrets" {
   source = "./modules/github-secrets"
 
+  github_org   = var.github_org
   repositories = var.repositories
 }
 
