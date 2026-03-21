@@ -5,9 +5,9 @@
 # - Attempts to restore terraform.tfvars from GitHub secret
 # - Creates default files if restoration fails
 # 
-# Usage: ./scripts/restore.sh [account-id] [region] [backend-hcl] [bucket-prefix]
-# Example: ./scripts/restore.sh (auto-detect from SSO)
-# Example: ./scripts/restore.sh 198252713378 ca-central-1
+# Usage: ./init.sh [account-id] [region] [backend-hcl] [bucket-prefix]
+# Example: ./init.sh (auto-detect from SSO)
+# Example: ./init.sh 198252713378 ca-central-1
 
 set +e  # Don't exit on errors - we'll handle them selectively
 
@@ -24,7 +24,7 @@ NC='\033[0m' # No Color
 # PARSE ARGUMENTS (for backend configuration)
 # ============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$SCRIPT_DIR"
 
 ACCOUNT_ID="${1:-}"
 REGION="${2:-}"
@@ -49,7 +49,7 @@ if [ -z "$ACCOUNT_ID" ]; then
     if [ -z "$ACCOUNT_ID" ]; then
         echo -e "${RED}✗ Could not detect account ID${NC}"
         echo "  Please ensure AWS credentials are configured or provide account ID:"
-        echo "  Usage: ./restore.sh <account-id> [region]"
+        echo "  Usage: ./init.sh <account-id> [region]"
         exit 1
     fi
     echo -e "${GREEN}✓ Detected account ID: $ACCOUNT_ID${NC}"
